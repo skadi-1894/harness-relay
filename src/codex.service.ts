@@ -1,0 +1,43 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { Codex } from '@openai/codex-sdk';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { CONFIG, type Config } from './config.js';
+import { type ChatRequest, promptFor } from './request.js';
+
+export interface Completion { text: string; input: number; cached: number; output: number }
+@Injectable()
+export class CodexService {
+  constructor(@Inject(CONFIG) private readonly config: Config) {}
+
+  async complete(request: ChatRequest, signal: AbortSignal): Promise<Completion> {
+    const directory = await mkdtemp(join(tmpdir(), 'harness-relay-'));
+    try {
+      const codex = new Codex({
+        codexPathOverride: this.config.CODEX_PATH,
+        env: Object.fromEntries(Object.entries({ ...process.env, CODEX_HOME: this.config.CODEX_HOME })
+          .filter((entry): entry is [string, string] => entry[1] !== undefined && !['OPENAI_API_KEY', 'CODEX_API_KEY'].includes(entry[0]))),
+        config: {
+          service_tier: (request.service_tier ?? this.config.CODEX_SERVICE_TIER) === 'priority'
+            ? 'fast' : (request.service_tier ?? this.config.CODEX_SERVICE_TIER),
+          // Disable exec tools rather than relying on the prompt to prevent execution.
+          features: { shell_tool: false, fast_mode: true },
+          mcp_servers: {},
+        },
+      });
+      const thread = codex.startThread({
+        model: request.model ?? this.config.CODEX_MODEL,
+        modelReasoningEffort: request.reasoning_effort ?? this.config.CODEX_REASONING_EFFORT,
+        workingDirectory: directory, skipGitRepoCheck: true,
+        sandboxMode: 'read-only', approvalPolicy: 'never',
+        webSearchMode: 'disabled', networkAccessEnabled: false,
+      });
+      const result = await thread.run(promptFor(request), { signal });
+      return { text: result.finalResponse, input: result.usage?.input_tokens ?? 0,
+        cached: result.usage?.cached_input_tokens ?? 0, output: result.usage?.output_tokens ?? 0 };
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }
+}

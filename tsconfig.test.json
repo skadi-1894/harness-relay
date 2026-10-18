@@ -1,0 +1,1 @@
+{"extends":"./tsconfig.json","compilerOptions":{"rootDir":".","isolatedModules":true},"include":["src/**/*.ts","test/**/*.ts"]}

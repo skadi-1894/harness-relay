@@ -1,0 +1,13 @@
+services:
+  inference:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      CODEX_HOME: /home/node/.harness-relay
+    volumes:
+      - ${HOME}/.harness-relay:/home/node/.harness-relay
+    init: true
+    restart: unless-stopped

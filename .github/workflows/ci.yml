@@ -60,7 +60,7 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Verify runtime image without provider credentials
         run: docker run --rm harness-relay:ci node scripts/smoke.mjs --container
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         if: github.event_name == 'push'
         with:
           registry: ghcr.io

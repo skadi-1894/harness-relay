@@ -1,5 +1,9 @@
 # Operations and provider login
 
+## Helm
+
+For a parameterized deployment, use the [example Helm chart](../charts/harness-relay/README.md). It includes existing-Secret authentication, a persistent PVC, probes and an optional ServiceMonitor. The plain manifests below remain available as an alternative.
+
 ## Kubernetes
 
 The example uses one StatefulSet replica and a persistent auth volume. Do not scale replicas sharing one OAuth refresh credential: concurrent refreshes may invalidate it. Auth persistence is not conversation memory. Backup/encrypt the PVC as credential material.
@@ -17,7 +21,7 @@ kubectl -n harness-relay exec -it harness-relay-0 -- npm run auth -- codex login
 kubectl -n harness-relay exec -it harness-relay-0 -- npm run auth -- codex status
 ```
 
-For Claude, `oauth` securely prompts for an existing setup-token; `api` prompts for an Anthropic API key. Subscription login runs the official CLI's browser flow via NanoClaw's terminal-capture method. When a headless browser redirect is unavailable, generate a token locally with the official `claude setup-token` and use the `oauth` method inside the Pod. Never paste a secret into a command argument, a chat or a manifest committed to Git.
+For Claude, `oauth` securely prompts for an existing setup-token; `api` prompts for an Anthropic API key. Subscription login runs the official CLI's browser flow via terminal capture. When a headless browser redirect is unavailable, generate a token locally with the official `claude setup-token` and use the `oauth` method inside the Pod. Never paste a secret into a command argument, a chat or a manifest committed to Git.
 
 Alternatively inject a Claude credential through your secret manager as `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`. Or mount JSON `{ "authEnv": "CLAUDE_CODE_OAUTH_TOKEN", "secret": "..." }` as a Secret file and set `CLAUDE_CREDENTIAL_FILE` to its path. This file is read for each request, so projected Secret rotation needs no restart. Environment injection needs a Pod restart to rotate and takes precedence over a saved credential file.
 
@@ -31,7 +35,7 @@ Codex login uses its official file credential store under `/state/codex`; refres
 - `REQUEST_TIMEOUT_MS` aborts requests; disconnects abort upstream work. `SHUTDOWN_GRACE_MS` drains in-flight requests on SIGTERM. Keep `terminationGracePeriodSeconds` larger than this setting. Tini forwards SIGTERM to the gateway so its SDK processes can drain before cancellation; it also reaps orphaned children.
 - Resource settings are starting values, not capacity guarantees. Measure CPU/memory with your enabled models and concurrency. Both native CLIs ship in the image.
 - No new memory/session continuation layer is implemented. Claude persistence is disabled. Codex may keep its normal CLI session artifacts under its dedicated home; these are never resumed by this relay.
-- The copied NanoClaw functions are version-attributed in `THIRD_PARTY_NOTICES.md`. Upgrading SDK/CLI versions requires re-running tests and opt-in live checks; upstream auth formats/terms may change.
+- Third-party functions are version-attributed in `THIRD_PARTY_NOTICES.md`. Upgrading SDK/CLI versions requires re-running tests and opt-in live checks; upstream auth formats/terms may change.
 
 ## Monitoring
 

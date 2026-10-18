@@ -1,4 +1,4 @@
-// SDK invocation/result and rate-limit handling adapted from NanoClaw's Claude provider.
+// SDK provider: third-party source provenance in THIRD_PARTY_NOTICES.md.
 // Copyright (c) 2026 Gavriel. MIT; see THIRD_PARTY_NOTICES.md.
 import { Inject, Injectable } from '@nestjs/common';
 import { query, type SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
@@ -57,7 +57,7 @@ export class ClaudeService {
         } else if (message.type === 'rate_limit_event') {
           const info = message.rate_limit_info;
           callbacks.onQuota?.({window:info.rateLimitType ?? 'unknown',status:info.status, utilization:info.utilization, resetsAt:info.resetsAt});
-          // Informational events must not fail healthy requests (same NanoClaw invariant).
+          // Informational events must not fail healthy requests (informational quota events).
           if (info.status === 'rejected') blocked = info.errorCode === 'credits_required' || info.overageDisabledReason === 'out_of_credits' ? 'billing' : 'rate_limit';
         } else if (message.type === 'result') result = message;
       }

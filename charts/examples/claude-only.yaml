@@ -1,0 +1,5 @@
+# Login with: npm run auth -- claude login api (or an approved OAuth/subscription method).
+env:
+  CODEX_ENABLED: "false"
+  CLAUDE_ENABLED: "true"
+  DEFAULT_MODEL: claude/sonnet

@@ -1,0 +1,4 @@
+env:
+  CODEX_ENABLED: "true"
+  CLAUDE_ENABLED: "false"
+  DEFAULT_MODEL: gpt-6.1-sol

@@ -14,9 +14,16 @@ This record applies to this local checkout and does not establish support for al
 
 ## 2026-10-18 — Claude/auth/observability extension
 
-- Added the official Claude Agent SDK 0.3.296 and Claude Code 2.1.296; copied/adapted the version-attributed MIT NanoClaw auth helpers, subscription capture, credential classification and provider event handling.
+- Added the official Claude Agent SDK 0.3.296 and Claude Code 2.1.296; copied/adapted the version-attributed third-party MIT auth helpers, subscription capture, credential classification and provider event handling.
 - 38 Jest tests in the combined test suite cover both providers, token accounting on failure, incremental Claude SSE before completion, quota warning/rejection semantics, auth storage/rotation, readiness, admission limits, request-log privacy and shutdown draining. Tests use SDK fixtures and do not consume subscription allowance.
 - A fresh Linux arm64 runtime image built successfully. Native Claude CLI version, liveness, missing-auth readiness (503), and the metrics endpoint were exercised under a read-only root filesystem with writable temporary state; runtime dependencies reported no npm advisories.
 - Kubernetes examples render with `kubectl kustomize`; monitoring YAML parses locally and promtool validates all three alert rules. No cluster changes have been applied.
 - A new Claude browser login and real Claude inference have not been performed: the account owner must complete the interactive login, then run the opt-in live smoke. The earlier Codex live result above predates this extension and is not evidence of a live check of the combined version.
 - The earlier dev-toolchain advisory remains confined to development dependencies. No dependency downgrade or forced audit fix was applied.
+
+## 2026-10-18 — deployment examples and local Docker guide
+
+- Helm 4.2.4 strict lint passed for defaults, Claude + ServiceMonitor, and Codex + existing-PVC values. Templates were rendered and checked for a singleton StatefulSet, both PVC paths, hardened runtime settings, and one API scrape target (the headless Service is excluded).
+- Empty Secret names, credentials under Helm env values, and shutdown grace shorter than the application's drain period are rejected during rendering.
+- All 38 Jest tests and the production build passed after moving auth helpers into neutral paths; upstream attribution remains in third-party legal notices.
+- The local Docker Compose example passes `docker compose config --quiet`. The guide does not imply that interactive login has been tested. No Helm release or Kubernetes resources were installed.

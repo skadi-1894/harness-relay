@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { Config } from './config.js';
-import { suppliedCredential } from './vendor/nanoclaw/supplied-credential.js';
+import { suppliedCredential } from './auth/helpers/supplied-credential.js';
 
 const credentialSchema = z.object({
   authEnv: z.enum(['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN']),

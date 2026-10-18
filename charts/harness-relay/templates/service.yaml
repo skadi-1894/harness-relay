@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "harness-relay.fullname" . }}
+  labels:
+    {{- include "harness-relay.labels" . | nindent 4 }}
+    harness-relay.io/service: api
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "harness-relay.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "harness-relay.fullname" . }}-headless
+  labels:
+    {{- include "harness-relay.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "harness-relay.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

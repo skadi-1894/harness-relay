@@ -1,0 +1,16 @@
+Release {{ .Release.Name }} uses one replica with persistent provider authentication.
+The image must already exist in the configured registry.
+
+Before login, readiness is false; liveness keeps the Pod running.
+Authenticate only your enabled providers:
+
+  kubectl -n {{ .Release.Namespace }} exec -it {{ include "harness-relay.fullname" . }}-0 -- npm run auth -- claude login oauth
+  kubectl -n {{ .Release.Namespace }} exec -it {{ include "harness-relay.fullname" . }}-0 -- npm run auth -- codex login device
+
+Then wait for readiness and forward the API:
+
+  kubectl -n {{ .Release.Namespace }} wait --for=condition=Ready pod/{{ include "harness-relay.fullname" . }}-0 --timeout=120s
+  kubectl -n {{ .Release.Namespace }} port-forward service/{{ include "harness-relay.fullname" . }} 3000:3000
+
+Credentials are supplied through Secret {{ .Values.existingSecret }} and/or the auth PVC.
+Do not scale instances sharing one refresh credential. See docs/operations.md.

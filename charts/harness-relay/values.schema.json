@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["image", "existingSecret", "env", "persistence", "resources", "terminationGracePeriodSeconds", "tmpSizeLimit", "serviceMonitor"],
+  "properties": {
+    "image": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "tag", "digest", "pullPolicy"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "tag": {"type": "string"},
+        "digest": {"type": "string", "pattern": "^$|^sha256:[a-f0-9]{64}$"},
+        "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
+      }
+    },
+    "imagePullSecrets": {"type": "array", "items": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string", "minLength": 1}}, "additionalProperties": false}},
+    "existingSecret": {"type": "string", "minLength": 1},
+    "env": {"type": "object", "propertyNames": {"pattern": "^[A-Z_][A-Z0-9_]*$"}, "additionalProperties": {"type": ["string", "number", "boolean"]}},
+    "persistence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["size", "storageClass", "existingClaim"],
+      "properties": {"size": {"type": "string", "minLength": 1}, "storageClass": {"type": "string"}, "existingClaim": {"type": "string"}}
+    },
+    "resources": {"type": "object"},
+    "terminationGracePeriodSeconds": {"type": "integer", "minimum": 1},
+    "tmpSizeLimit": {"type": "string", "minLength": 1},
+    "podAnnotations": {"type": "object", "additionalProperties": {"type": "string"}},
+    "nodeSelector": {"type": "object", "additionalProperties": {"type": "string"}},
+    "tolerations": {"type": "array", "items": {"type": "object"}},
+    "affinity": {"type": "object"},
+    "serviceMonitor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "additionalLabels", "interval", "scrapeTimeout", "tokenSecretKey"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "additionalLabels": {"type": "object", "additionalProperties": {"type": "string"}},
+        "interval": {"type": "string", "minLength": 1},
+        "scrapeTimeout": {"type": "string", "minLength": 1},
+        "tokenSecretKey": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

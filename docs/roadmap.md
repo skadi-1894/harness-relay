@@ -5,7 +5,7 @@ Status: experimental, pre-1.0. This describes the current scope, not a release p
 ## Implemented locally
 
 - Codex and Claude SDK providers with configured model allowlists and OpenAI text Chat Completions.
-- NanoClaw-derived Claude subscription/OAuth/API-key authentication, Codex browser/device login and persistent cluster auth storage.
+- Claude subscription/OAuth/API-key authentication, Codex browser/device login and persistent cluster auth storage.
 - Incremental Claude SSE and buffered Codex SSE; no conversation continuation.
 - JSON stdout logs for Loki collectors, bounded Prometheus request/token/duration/error metrics, and SDK-reported Claude subscription quota events.
 - Liveness/readiness, rate/concurrency bounds, shutdown draining, non-root Docker/Compose, Kubernetes and Prometheus Operator examples.

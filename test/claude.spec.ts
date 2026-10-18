@@ -10,7 +10,7 @@ const config=loadConfig({INFERENCE_API_KEY:'test-secret-long-enough',LOG_LEVEL:'
 const result={type:'result',subtype:'success',is_error:false,result:'Hello',total_cost_usd:.02,
   usage:{input_tokens:1,output_tokens:1},modelUsage:{sonnet:{inputTokens:10,outputTokens:5,cacheReadInputTokens:20,cacheCreationInputTokens:3}}} as unknown as SDKResultMessage;
 function events(...messages:unknown[]) { sdkQuery.mockImplementation(async function*(){for(const message of messages) yield message as SDKMessage;}); }
-describe('NanoClaw-derived Claude SDK provider',()=>{
+describe('Claude SDK provider',()=>{
   beforeEach(()=>sdkQuery.mockReset());
   it('disables tools, settings inheritance, sessions and accounts all model usage',async()=>{
     events(result);

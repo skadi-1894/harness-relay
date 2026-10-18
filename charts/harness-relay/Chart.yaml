@@ -1,0 +1,8 @@
+apiVersion: v2
+name: harness-relay
+description: Example single-instance Harness Relay deployment with persistent provider authentication
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.26.0-0"
+home: https://github.com/skadi-1894/harness-relay

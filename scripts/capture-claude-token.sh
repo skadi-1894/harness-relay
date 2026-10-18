@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Adapted from NanoClaw; Copyright (c) 2026 Gavriel, MIT (licenses/NanoClaw-MIT.txt).
+# Copyright (c) 2026 Gavriel, MIT (licenses/third-party-auth-MIT.txt).
 set -euo pipefail
 umask 077
 output=${1:?output path required}
@@ -14,7 +14,7 @@ if script --version 2>/dev/null | grep -q util-linux; then
 else
   script -q "$capture" "$CLAUDE_EXECUTABLE" setup-token
 fi
-token=$(node "$script_dir/../dist/vendor/nanoclaw/captured-token.js" claude "$capture" || true)
+token=$(node "$script_dir/../dist/auth/helpers/captured-token.js" claude "$capture" || true)
 if [[ -z "$token" ]]; then
   echo "No Claude OAuth token was captured." >&2
   exit 1

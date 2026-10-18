@@ -3,9 +3,9 @@ import {mkdtemp,readFile,rm,stat} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {saveCredential} from '../src/credentials.js';
-import {suppliedCredential} from '../src/vendor/nanoclaw/supplied-credential.js';
-import {extractClaudeOAuthToken} from '../src/vendor/nanoclaw/captured-token.js';
-describe('NanoClaw authentication',()=>{
+import {suppliedCredential} from '../src/auth/helpers/supplied-credential.js';
+import {extractClaudeOAuthToken} from '../src/auth/helpers/captured-token.js';
+describe('Provider authentication',()=>{
   const TOKEN=`sk-ant-oat01-${'a'.repeat(90)}AA`;
   it('extracts wrapped terminal tokens with ANSI artifacts, not placeholders',()=>{
     expect(extractClaudeOAuthToken(`\x1b[?2026hToken:\n ${TOKEN.slice(0,72)}\n ${TOKEN.slice(72)}\x1b[0m\nexport CLAUDE_CODE_OAUTH_TOKEN=<token>`)).toBe(TOKEN);

@@ -1,0 +1,5 @@
+# Requires Prometheus Operator CRDs; match your Prometheus serviceMonitorSelector.
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack

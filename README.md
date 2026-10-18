@@ -24,11 +24,11 @@ npm start
 
 Set `CODEX_ENABLED=false` for Claude-only operation, or `CLAUDE_ENABLED=false` for Codex-only operation. `DEFAULT_MODEL` chooses the model when a request omits it. The CLI preserves the earlier `npm run auth` (Codex browser), `npm run auth -- --device-auth`, and `npm run auth:status` shortcuts. Build before running authentication commands.
 
-Claude auth adapts NanoClaw's subscription/OAuth/API flows, token extraction and credential classification, with MIT attribution in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Tokens/keys are stored atomically with `0600` permissions outside the checkout and loaded on each request. Alternatively inject `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` through your secret manager. Environment credentials take precedence over the file. Provider credentials are never accepted through the inference HTTP API.
+Claude supports subscription, OAuth-token and API-key authentication. Tokens/keys are stored atomically with `0600` permissions outside the checkout and loaded on each request. Alternatively inject `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` through your secret manager. Environment credentials take precedence over the file. Provider credentials are never accepted through the inference HTTP API.
 
 Use a dedicated Codex/Claude home. Local defaults are `~/.harness-relay` and `~/.harness-relay/claude`; containers persist both under `/state`. Codex stores and refreshes its own login. Claude `setup-token` produces a long-lived token: reauthenticate/rotate it when it expires or is revoked. `npm run auth -- claude status` checks configuration presence; Kubernetes readiness also checks local CLI recognition. Neither promises that upstream has accepted a live inference request.
 
-**Provider terms:** [Anthropic's Agent SDK documentation](https://code.claude.com/docs/en/agent-sdk/overview) says third-party developers need prior approval to offer claude.ai login/rate limits in their products. NanoClaw's implementation is not such approval. Use Anthropic API-key auth unless your subscription integration is approved/permitted. Subscription usage remains subject to account limits; this relay does not extend them.
+**Provider terms:** [Anthropic's Agent SDK documentation](https://code.claude.com/docs/en/agent-sdk/overview) says third-party developers need prior approval to offer claude.ai login/rate limits in their products. Use Anthropic API-key auth unless your subscription integration is approved/permitted. Subscription usage remains subject to account limits; this relay does not extend them.
 
 ## API
 
@@ -57,6 +57,8 @@ Claude streams SDK text deltas as OpenAI SSE chunks. Codex currently buffers the
 
 ## Deployment and monitoring
 
+[Local Docker setup](docs/docker-local.md) covers configuration, login, the first API request and updates. [Example Helm chart](charts/harness-relay/README.md) includes provider-only and monitoring values.
+
 ```sh
 docker compose up --build -d
 docker compose exec -it inference npm run auth -- claude login subscription
@@ -77,6 +79,6 @@ npm run smoke
 SMOKE_MODEL=claude/sonnet npm run smoke:live
 ```
 
-Jest verifies HTTP compatibility, NanoClaw-derived auth parsing, credential storage, Claude/Codex SDK adapters, streaming, metrics, quota events, cancellation and release gates. CI checks PRs, builds and smoke-tests the runtime image, then publishes to `ghcr.io/skadi-1894/harness-relay` on main/version-tag pushes. Actions and the Node image are pinned. See [release procedure](docs/releases.md) and [verification record](docs/verification-results.md).
+Jest verifies HTTP compatibility, auth parsing, credential storage, Claude/Codex SDK adapters, streaming, metrics, quota events, cancellation and release gates. CI checks PRs, builds and smoke-tests the runtime image, then publishes to `ghcr.io/skadi-1894/harness-relay` on main/version-tag pushes. Actions and the Node image are pinned. See [release procedure](docs/releases.md) and [verification record](docs/verification-results.md).
 
-MIT covers this relay and the attributed NanoClaw code; vendor SDKs/CLIs retain their own licenses and terms. This is an independent project, not affiliated with OpenAI or Anthropic.
+MIT covers this relay and its attributed third-party code; vendor SDKs/CLIs retain their own licenses and terms. This is an independent project, not affiliated with OpenAI or Anthropic.

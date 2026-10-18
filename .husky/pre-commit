@@ -1,1 +1,2 @@
+# Run ESLint, type checks, tests and the production build before committing.
 npm run check

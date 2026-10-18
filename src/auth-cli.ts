@@ -1,4 +1,4 @@
-// Adapted NanoClaw auth UX; provenance and MIT license in THIRD_PARTY_NOTICES.md.
+// Authentication CLI; third-party provenance and license in THIRD_PARTY_NOTICES.md.
 import * as p from '@clack/prompts';
 import { spawn } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';

@@ -2,7 +2,7 @@
 
 **Experimental · pre-1.0 · MIT.** [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Roadmap](docs/roadmap.md) · [Changelog](CHANGELOG.md)
 
-A personal, OpenAI-compatible HTTP facade for Codex CLI and the Claude Agent SDK. Think of it as an OpenRouter-style entry point on your own computer: connect your tools to one familiar API and choose a configured provider/model. It is intended for local development and small, single-user self-hosted setups, including a spare mini PC or home server.
+A personal, OpenAI-compatible HTTP facade for Codex CLI and the Claude Agent SDK. Think of it as an OpenRouter-style entry point on your own computer: connect your tools and agents to one familiar API and choose a configured provider/model. It is intended for local development and small, single-user self-hosted setups, including a spare mini PC or home server. Your agents can also query the existing endpoints to inspect usage and provider status when needed.
 
 The relay and provider CLIs run on your machine; model inference still runs on the provider's infrastructure. No local GPU or model weights are required.
 
@@ -62,11 +62,35 @@ Claude supports `low`, `medium`, `high`, `xhigh`, `max` effort; Codex additional
 
 Claude streams SDK text deltas as OpenAI SSE chunks. Codex currently buffers the complete SDK response before emitting SSE. Errors after streaming begins arrive as an SSE `error` object followed by `[DONE]`. Each request is independent; the supplied history is serialized into one prompt. This is not native Chat Completions role isolation. Tools, images, JSON schema output, temperature, max_tokens and the Responses API are not supported.
 
-## Local operation and monitoring
+## Usage and status for your tools and agents
+
+You do not need a monitoring stack to see what the relay is doing. External agents with HTTP tools can query the existing endpoints directly, using the appropriate bearer key:
+
+| Endpoint | What an agent can inspect |
+| --- | --- |
+| `GET /metrics` | Observed token consumption by provider/model, request counts, failures, duration histograms and subscription quota observations when the provider reports them |
+| `GET /health/ready` | Whether each enabled provider's local CLI recognizes credentials; this is not a live inference or remaining-allowance check |
+| `GET /v1/models` | The configured provider/model catalog; this is not a guarantee of upstream account access |
+
+```sh
+curl http://127.0.0.1:3000/metrics \
+  -H 'Authorization: Bearer YOUR_METRICS_TOKEN'
+curl http://127.0.0.1:3000/health/ready
+curl http://127.0.0.1:3000/v1/models \
+  -H 'Authorization: Bearer YOUR_INFERENCE_API_KEY'
+```
+
+`/metrics` returns Prometheus text, which an agent can read without running Prometheus. The other two endpoints return JSON. Configure your agent to query them when you need usage or status information; the relay does not automatically add monitoring tools to inference requests.
+
+Token counters cover observed work through this relay since its process started and reset on restart. They are not your whole subscription history or a billing statement. Other applications may spend the same allowance. Claude quota observations include their last-observed and reset timestamps when available; Codex currently exposes request usage without account quota windows. Missing or stale quota data means unknown, not zero usage or unlimited capacity.
+
+## Local operation and optional monitoring
 
 Run a single Docker Compose instance with its persistent auth volume. The container uses UID 1000, a read-only root filesystem and writable `/tmp`. Request/concurrency limits and graceful shutdown help keep a small personal setup predictable; they do not make a subscription-backed service scalable.
 
-[Local operations](docs/operations.md) covers auth persistence, rotation and updates. [Metrics and Loki](docs/observability.md) describes token/cost semantics, PromQL and optional log collection. Monitoring is optional and does not require a cluster.
+JSON logs are there to diagnose your own requests and errors. Read them directly with `docker compose logs -f inference`; they omit credentials and prompt/response bodies. If you want a dashboard or searchable history, connect the same metrics to Prometheus/Grafana and the logs to Loki. Those integrations are optional conveniences for a personal setup, not a production-readiness claim.
+
+[Local operations](docs/operations.md) covers auth persistence, rotation and updates. [Metrics and Loki](docs/observability.md) documents the metric names, freshness rules, token/cost semantics and example queries.
 
 ## Development and verification
 

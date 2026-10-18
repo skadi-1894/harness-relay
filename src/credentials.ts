@@ -24,7 +24,7 @@ export async function loadClaudeCredential(config: Config): Promise<Credential |
   const env = suppliedCredential();
   if (env) return credentialSchema.parse(env);
   try { return credentialSchema.parse(JSON.parse(await readFile(config.claudeCredentialFile,'utf8'))); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw new Error('Invalid or unreadable Claude credential file'); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw new Error('Invalid or unreadable Claude credential file', { cause: error }); }
 }
 
 // Only OS/runtime variables cross the process boundary. Never pass the gateway's API key.

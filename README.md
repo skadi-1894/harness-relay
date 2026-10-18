@@ -6,7 +6,7 @@ OpenAI-compatible NestJS inference relay for locally authenticated Codex CLI and
 
 ## Quick start
 
-Requires Node.js 22 and access to a configured provider/model. Both CLIs are installed by npm.
+Requires Node.js 22.13+ and access to a configured provider/model. Both CLIs are installed by npm.
 
 ```sh
 git clone https://github.com/skadi-1894/harness-relay.git

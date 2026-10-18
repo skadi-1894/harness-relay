@@ -1,10 +1,10 @@
 # Contributing to Harness Relay
 
-Harness Relay is experimental. Codex is the only implemented provider today. Please discuss new providers and compatibility changes in an issue before opening a large PR.
+Harness Relay is experimental. Codex and Claude providers are implemented. Please discuss new providers and compatibility changes in an issue before opening a large PR.
 
 ## Local development
 
-Use Node.js 22 and npm (the lockfile is committed). From a clean checkout:
+Use Node.js 22.13+ and npm (the lockfile is committed). From a clean checkout:
 
 ```sh
 npm ci
@@ -14,7 +14,7 @@ npm run build
 npm start
 ```
 
-`npm run dev` starts the source directly. `npm run check` runs type checking, Jest and the production build. Husky runs the same checks before commits. All default tests are offline and must not consume subscription allowance.
+`npm run dev` starts the source directly. `npm run lint` checks TypeScript and JavaScript using ESLint; `npm run lint:fix` applies available automatic fixes. `npm run check` runs ESLint, type checking, Jest and the production build. Husky runs the same checks before commits. All default tests are offline and must not consume subscription allowance.
 
 ## Structure
 
@@ -25,7 +25,7 @@ npm start
 - `src/app.ts`: application composition and bearer authentication.
 - `test/`: HTTP contract and SDK adapter tests.
 
-A future provider should implement the completion boundary (text and explicit input/cache/output usage), preserve cancellation, and have its own authentication/configuration. Add an explicit registry before exposing a second provider; do not silently route unknown model names. Never invent token usage or subscription balance values when a provider does not report them.
+A future provider should implement the completion boundary (text and explicit input/cache/output usage), preserve cancellation, and have its own authentication/configuration. Register it in the existing provider registry; do not silently route unknown model names. Never invent token usage or subscription balance values when a provider does not report them.
 
 ## Pull requests
 

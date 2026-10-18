@@ -6,7 +6,6 @@ Changes are grouped by release. Before 1.0, minor releases may change behavior; 
 
 ### Added
 
-- Example Helm chart with provider-only overlays, persistent auth and optional ServiceMonitor.
 - Step-by-step local Docker Compose setup guide.
 
 - OpenAI-compatible text Chat Completions and a configured model list via NestJS.
@@ -20,7 +19,16 @@ Changes are grouped by release. Before 1.0, minor releases may change behavior; 
 
 - Official Claude Agent SDK provider with subscription/OAuth/API-key authentication helpers.
 - Protected Prometheus metrics, quota observations, JSON stdout logs for Loki collectors and request IDs.
-- Liveness/readiness, graceful draining, rate limiting, persistent auth volumes and Kubernetes/monitoring examples.
+- Liveness/readiness, graceful draining, rate limiting, persistent auth volumes and Docker Compose operation.
+
+### Changed
+
+- Focused deployment on one-user Docker Compose setups for local development and small self-hosted machines.
+- Documented subscription allowance reuse through an OpenAI-compatible facade, with provider limits and API-billing distinctions.
+
+### Removed
+
+- Cluster deployment manifests, charts and operator-specific monitoring resources.
 
 ### Known limitations
 

@@ -1,5 +1,7 @@
 # Run locally with Docker Compose
 
+Run one instance for your own tools on a laptop, mini PC or small home server. This project is not a horizontally scalable production gateway and should not be deployed in Kubernetes. Subscription allowance is personal and finite.
+
 This guide builds from the checkout and keeps provider credentials in a Docker volume. No host Node.js/npm installation is needed. Commands use a Unix shell (Linux/macOS, or WSL). Requires Git, Docker with a running engine, and the Compose plugin (`docker compose version`).
 
 ## 1. Prepare configuration

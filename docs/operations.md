@@ -1,44 +1,31 @@
-# Operations and provider login
+# Local operations
 
-## Helm
+Harness Relay is intended for one person's local development and self-hosted inference on a small computer. Docker Compose is the supported deployment approach. **Do not use it as a Kubernetes workload or a horizontally scalable production gateway.** More instances cannot increase the allowance of one personal subscription, and processes sharing a refresh credential can interfere with each other.
 
-For a parameterized deployment, use the [example Helm chart](../charts/harness-relay/README.md). It includes existing-Secret authentication, a persistent PVC, probes and an optional ServiceMonitor. The plain manifests below remain available as an alternative.
+For installation, login and your first API request, follow [Docker local setup](docker-local.md). The model runs on the provider's infrastructure; your machine hosts the facade and CLIs.
 
-## Kubernetes
+## Authentication and persistence
 
-The example uses one StatefulSet replica and a persistent auth volume. Do not scale replicas sharing one OAuth refresh credential: concurrent refreshes may invalidate it. Auth persistence is not conversation memory. Backup/encrypt the PVC as credential material.
+The Compose `auth` volume contains the dedicated Codex and Claude homes under `/state`. Treat it as credential material: protect backups and do not share it with other users or mount your everyday CLI home into the relay. Keep one running instance per credential set. Saving login state does not implement conversation memory.
 
-1. Publish the image, then pin the image version/digest in `k8s/statefulset.yaml`. The example `0.1.0` image is a placeholder until a release is published. Use a storage class supporting the PVC; ensure any GHCR package is public or configure imagePullSecrets.
-2. Create the namespace and a Secret named `harness-relay`, containing independent `INFERENCE_API_KEY` and `METRICS_TOKEN` values. For example, store only these two values in a local protected `gateway.env`, then run `kubectl -n harness-relay create secret generic harness-relay --from-env-file=/path/to/gateway.env`. Do not commit that file or credentials. Manage the Secret via your usual secret manager for production.
-3. Set provider/model configuration in the manifest; disable any provider you will not authenticate. Readiness requires every enabled provider to have a locally recognized login.
-4. Run `kubectl apply -k k8s`. Before login the Pod can run with readiness false: the startup/liveness probes check `/health/live`, so it will not restart while waiting for auth.
-5. Authenticate using the built-in CLI:
+Use `docker compose exec -it inference npm run auth -- claude login api` for an Anthropic API key, or the approved `oauth` / `subscription` method. For Codex, use `docker compose exec -it inference npm run auth -- codex login device`. The official CLI handles browser/device authentication; never supply an account password to this service.
 
-```sh
-kubectl -n harness-relay exec -it harness-relay-0 -- npm run auth -- claude login subscription
-kubectl -n harness-relay exec -it harness-relay-0 -- npm run auth -- claude status
-kubectl -n harness-relay exec -it harness-relay-0 -- npm run auth -- codex login device
-kubectl -n harness-relay exec -it harness-relay-0 -- npm run auth -- codex status
-```
+Claude tokens/keys are saved atomically with mode 0600 and read for each request, so file-based rotation needs no restart. Environment credentials (`CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`) override saved files; changing them requires `docker compose up -d` to recreate the container. Codex manages its own file credential store and refreshes. Re-run Claude login when a setup-token expires or is revoked.
 
-For Claude, `oauth` securely prompts for an existing setup-token; `api` prompts for an Anthropic API key. Subscription login runs the official CLI's browser flow via terminal capture. When a headless browser redirect is unavailable, generate a token locally with the official `claude setup-token` and use the `oauth` method inside the Pod. Never paste a secret into a command argument, a chat or a manifest committed to Git.
+`/health/live` checks the running process. `/health/ready` checks local credential recognition for every enabled provider, cached for ten seconds. It does not make a model request or verify your remaining allowance. If one provider is unused, disable it in `.env` and recreate the container.
 
-Alternatively inject a Claude credential through your secret manager as `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`. Or mount JSON `{ "authEnv": "CLAUDE_CODE_OAUTH_TOKEN", "secret": "..." }` as a Secret file and set `CLAUDE_CREDENTIAL_FILE` to its path. This file is read for each request, so projected Secret rotation needs no restart. Environment injection needs a Pod restart to rotate and takes precedence over a saved credential file.
+## Limits and updates
 
-Codex login uses its official file credential store under `/state/codex`; refreshes can update it. Claude setup-tokens are rotated by repeating login. Readiness caches local CLI checks for ten seconds and never makes a paid model call. It cannot detect every revocation, account ban or upstream outage; use inference errors and an opt-in end-to-end smoke check for that.
+The API listens on localhost by default. Connect your own tools using the configured bearer key. Keep `.env` private and use your normal secure access method if reaching a home server remotely.
 
-## Runtime controls
+`MAX_CONCURRENT_REQUESTS` limits active CLI calls. `RATE_LIMIT_PER_MINUTE` is a process-local source-IP limit; it does not create provider capacity. `REQUEST_TIMEOUT_MS` cancels overdue requests. On stop, the service drains for `SHUTDOWN_GRACE_MS`, then cancels remaining work; keep Compose `stop_grace_period` longer than that duration.
 
-- A ClusterIP Service exposes port 3000. Add your ingress/TLS/access policies if exposing it beyond trusted clients. Kubernetes RBAC should restrict access to `pods/exec` and the auth PVC/Secrets.
-- The root filesystem is read-only, all capabilities are dropped and service-account automount is disabled. The container has no host source tree mounted. Tools and inherited project/user settings are disabled for Claude; Codex uses an empty working directory/read-only sandbox with shell and web search disabled. Use only dedicated configuration homes.
-- `MAX_CONCURRENT_REQUESTS` limits active CLI processes. `RATE_LIMIT_PER_MINUTE` is a process-local, source-IP limiter; requests traverse no trusted proxy by default. Behind a proxy, all clients may share its quota. Do not blindly trust X-Forwarded-For.
-- `REQUEST_TIMEOUT_MS` aborts requests; disconnects abort upstream work. `SHUTDOWN_GRACE_MS` drains in-flight requests on SIGTERM. Keep `terminationGracePeriodSeconds` larger than this setting. Tini forwards SIGTERM to the gateway so its SDK processes can drain before cancellation; it also reaps orphaned children.
-- Resource settings are starting values, not capacity guarantees. Measure CPU/memory with your enabled models and concurrency. Both native CLIs ship in the image.
-- No new memory/session continuation layer is implemented. Claude persistence is disabled. Codex may keep its normal CLI session artifacts under its dedicated home; these are never resumed by this relay.
-- Third-party functions are version-attributed in `THIRD_PARTY_NOTICES.md`. Upgrading SDK/CLI versions requires re-running tests and opt-in live checks; upstream auth formats/terms may change.
+The container runs unprivileged with a read-only root filesystem, a writable `/tmp` and an auth volume. Tools and inherited project settings are disabled for Claude; Codex runs in an empty working directory with shell/web access disabled. These controls suit a personal relay; they are not a production SLA or multi-user isolation boundary.
+
+Use `docker compose up --build -d` after source updates. Ordinary `docker compose down` preserves the auth volume; removing volumes deletes saved logins. Do not scale the service with Compose replicas. Claude session persistence is disabled; Codex may keep normal CLI artifacts in its dedicated home, but this relay never resumes them.
 
 ## Monitoring
 
-`monitoring/servicemonitor.yaml` and `monitoring/alerts.yaml` are optional Prometheus Operator resources. Add the labels selected by your Prometheus installation before applying. Create them in the same namespace as the bearer-token Secret. Without the Operator, adapt `monitoring/prometheus.yml` and mount the metrics bearer token as a file.
+The `/metrics` endpoint and JSON stdout logs remain available for optional Prometheus/Loki integration. They help track your own requests, tokens, failures and provider-reported quota events. See [observability](observability.md) for a standalone scrape example and query semantics. The service does not install a monitoring stack.
 
-The app writes JSON to stdout for your existing Alloy/Fluent Bit/Vector collector to ship to Loki. See `docs/observability.md`. It does not run or configure Loki/Prometheus in the cluster itself.
+Included subscription allowance can avoid separate API-token charges for eligible requests. A subscription still has limits and may use paid credits/overage; requests authenticated with an API key incur normal API charges. Provider terms determine whether a subscription-backed integration is permitted.

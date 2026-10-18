@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: harness-relay
+spec:
+  serviceName: harness-relay
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: harness-relay
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: harness-relay
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 40
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: inference
+          # Pin a published version or digest before applying.
+          image: ghcr.io/skadi-1894/harness-relay:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: harness-relay
+          env:
+            - name: CODEX_ENABLED
+              value: "true"
+            - name: CLAUDE_ENABLED
+              value: "true"
+            - name: CLAUDE_MODELS
+              value: sonnet,opus,haiku
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: auth
+              mountPath: /state
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: auth
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Gi

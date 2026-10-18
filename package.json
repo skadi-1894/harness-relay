@@ -1,7 +1,7 @@
 {
   "name": "harness-relay",
   "version": "0.1.0",
-  "description": "OpenAI-compatible HTTP relay for coding harnesses, starting with Codex CLI",
+  "description": "OpenAI-compatible inference relay for Codex and Claude Agent SDK",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -15,7 +15,12 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "check": "npm run typecheck && npm test && npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "smoke": "node --env-file-if-exists=.env scripts/smoke.mjs",
+    "smoke:live": "node --env-file-if-exists=.env scripts/smoke.mjs --live",
+    "release:check": "node scripts/release-check.mjs",
+    "auth": "node --env-file-if-exists=.env scripts/auth.mjs",
+    "auth:status": "node --env-file-if-exists=.env scripts/auth.mjs status"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
@@ -24,7 +29,13 @@
     "@openai/codex-sdk": "0.163.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "@anthropic-ai/claude-agent-sdk": "^0.3.296",
+    "@anthropic-ai/claude-code": "^2.1.296",
+    "@clack/prompts": "^1.8.1",
+    "@prometheus-io/client": "^0.16.1",
+    "express-rate-limit": "^8.7.1",
+    "pino": "^10.4.0"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.1.0",

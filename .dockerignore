@@ -4,3 +4,9 @@
 !tsconfig.json
 !src/
 !src/**
+!scripts/
+!scripts/**
+!LICENSE
+!THIRD_PARTY_NOTICES.md
+!licenses/
+!licenses/**

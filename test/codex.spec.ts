@@ -17,7 +17,7 @@ describe('Codex SDK adapter', () => {
     const config = loadConfig({INFERENCE_API_KEY:'test-secret-long-enough', CODEX_HOME:'/dedicated-home'});
     const signal = new AbortController().signal;
     const result = await new CodexService(config).complete({messages:[{role:'user',content:'Hi'}],stream:false,reasoning_effort:'high',service_tier:'priority'},signal);
-    expect(result).toEqual({text:'Hello',input:4,cached:1,output:2});
+    expect(result).toEqual({text:'Hello',input:4,cached:1,output:2,cacheWrite:0,reasoning:0});
     expect(construct.mock.calls.at(-1)?.[0]).toMatchObject({config:{service_tier:'fast',features:{shell_tool:false,fast_mode:true}},env:{CODEX_HOME:'/dedicated-home'}});
     expect(startThread.mock.calls.at(-1)?.[0]).toMatchObject({sandboxMode:'read-only',approvalPolicy:'never',modelReasoningEffort:'high',webSearchMode:'disabled',networkAccessEnabled:false});
     expect(run.mock.calls.at(-1)?.[1]).toEqual({signal});

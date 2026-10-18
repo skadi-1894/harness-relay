@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+const lock = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'));
+const tag = process.env.GITHUB_REF_NAME;
+assert.ok(tag, 'GITHUB_REF_NAME must contain the release tag');
+assert.equal(tag, `v${pkg.version}`, 'Release tag must match package.json');
+assert.equal(lock.version, pkg.version, 'Lockfile version must match package.json');
+assert.equal(lock.packages[''].version, pkg.version, 'Lockfile root version must match package.json');
+const changelog = await readFile(new URL('../CHANGELOG.md', import.meta.url), 'utf8');
+assert.ok(changelog.includes(`## [${pkg.version}] - `), 'Add a dated release heading to CHANGELOG.md before tagging');
+console.log(`Release metadata verified: ${tag}`);

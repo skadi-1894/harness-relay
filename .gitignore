@@ -4,3 +4,7 @@ coverage/
 .env
 .codex/
 *.tgz
+.env.*
+!.env.example
+.harness-relay/
+auth.json

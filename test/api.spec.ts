@@ -8,7 +8,7 @@ import type { CodexService } from '../src/codex.service.js';
 describe('OpenAI HTTP facade', () => {
   let app: INestApplication;
   const complete = jest.fn<CodexService['complete']>();
-  const config = loadConfig({ INFERENCE_API_KEY: 'test-secret-long-enough', CODEX_MODEL: 'test-model' });
+  const config = loadConfig({ INFERENCE_API_KEY: 'test-secret-long-enough', CODEX_MODEL: 'test-model', LOG_LEVEL: 'silent' });
   const body = { messages: [{ role: 'user', content: 'Hello' }] };
   beforeEach(async () => {
     complete.mockReset().mockResolvedValue({ text: 'Hi', input: 10, cached: 2, output: 3 });

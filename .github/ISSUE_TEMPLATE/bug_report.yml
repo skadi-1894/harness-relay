@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a reproducible problem without credentials or private conversations.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "For vulnerabilities use Security → Report a vulnerability. Never paste auth.json, .env or bearer tokens."
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Node.js version, container architecture and Codex CLI version. No account identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Minimal steps and a request with dummy text and dummy credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

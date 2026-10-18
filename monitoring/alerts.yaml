@@ -1,0 +1,29 @@
+# Optional: requires Prometheus Operator. Add your Prometheus selector labels.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: harness-relay
+  namespace: harness-relay
+spec:
+  groups:
+    - name: inference
+      rules:
+        - alert: InferenceProviderAuthenticationMissing
+          expr: inference_auth_configured == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Inference provider needs authentication"
+        - alert: InferenceProviderRateLimited
+          expr: increase(inference_subscription_rejections_total[10m]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Provider reported subscription rate limiting"
+        - alert: InferenceSubscriptionAlmostUsed
+          expr: (inference_subscription_utilization_ratio > 0.9) and on(provider, window) (time() - inference_subscription_observed_timestamp_seconds < 600) and on(provider, window) (inference_subscription_reset_timestamp_seconds > time())
+          labels:
+            severity: warning
+          annotations:
+            summary: "Recently observed subscription utilization exceeds 90%"

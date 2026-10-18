@@ -1,13 +1,14 @@
 # Changelog
 
-Changes are grouped by release. Before 1.0, minor releases may change behavior; patch releases are intended for compatible fixes. No release has been published yet.
+Changes are grouped by release. Before 1.0, minor releases may change behavior; patch releases are intended for compatible fixes.
 
 ## Unreleased
+
+## [0.1.0] - 2026-10-18
 
 ### Added
 
 - Step-by-step local Docker Compose setup guide.
-
 - OpenAI-compatible text Chat Completions and a configured model list via NestJS.
 - Official Codex SDK integration with a dedicated auth home and per-request workspace.
 - Model, reasoning effort and fast-tier configuration.
@@ -16,7 +17,6 @@ Changes are grouped by release. Before 1.0, minor releases may change behavior; 
 - Jest contract tests, Docker image/Compose and Husky checks.
 - Contribution/security documentation, issue/PR templates and Dependabot configuration.
 - SHA-pinned CI, container smoke checks and tag-driven release automation.
-
 - Official Claude Agent SDK provider with subscription/OAuth/API-key authentication helpers.
 - Protected Prometheus metrics, quota observations, JSON stdout logs for Loki collectors and request IDs.
 - Liveness/readiness, graceful draining, rate limiting, persistent auth volumes and Docker Compose operation.

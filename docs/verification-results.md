@@ -26,3 +26,11 @@ This record applies to this local checkout and does not establish support for al
 - The local Docker Compose example passes `docker compose config --quiet`; Docker runtime smoke and all 38 Jest tests passed after moving auth helpers into neutral paths.
 - Deployment is now limited to a single Docker Compose instance for personal development/self-hosting. Earlier cluster examples have been removed and are not supported deployment artifacts.
 - The guide does not imply that interactive account login has been tested. No remote deployment was performed.
+
+## 2026-10-18 — client function calling
+
+- ESLint, TypeScript checks, 63 Jest tests and the production build passed. Tests cover request schemas/history, forced and parallel calls, JSON Schema refs/formats, malformed provider decisions, failure usage, HTTP JSON and buffered SSE tool-call responses, and both SDK adapters.
+- Built and started the native Linux arm64 `harness-relay:tools-dev-arm64` image in the existing single-user local Compose setup, retaining the auth volume. This is a local development build, not a published release.
+- Live LangChain `ChatOpenAI.bind_tools` checks passed on `claude/sonnet` and `gpt-6.1-sol`. Each provider returned an assembled streaming `weather` function call with valid JSON arguments, accepted the client's `ToolMessage`, and returned a final answer containing the supplied public weather marker. Tool execution was a deterministic local test function; no external weather service was contacted.
+- Separate live checks on both providers confirmed a final answer with `tool_choice: auto` after supplying prior tool-call history. Forced named calls and `parallel_tool_calls: false` were exercised in the streaming checks. Token usage was charged against the configured provider allowance; this does not measure the remaining subscription balance.
+- This verifies structured-output adaptation with these models/accounts and the installed LangChain version. It does not establish native provider tool-call semantics, support for other unsupported Chat Completions fields, or that any particular downstream agent configuration has been tested.

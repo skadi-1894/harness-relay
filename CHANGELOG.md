@@ -4,6 +4,14 @@ Changes are grouped by release. Before 1.0, minor releases may change behavior; 
 
 ## Unreleased
 
+## [0.2.0] - 2026-10-18
+
+### Added
+
+- Client function calling for Codex and Claude via official SDK structured outputs: `tools`, `tool_choice`, `parallel_tool_calls`, assistant `tool_calls` and `role: tool` history.
+- Validated function arguments and buffered OpenAI SSE tool-call chunks; client tools are never executed by the relay.
+- Tool protocol, SDK adapter and HTTP/SSE regression tests, plus a LangChain `bind_tools` usage guide.
+
 ## [0.1.0] - 2026-10-18
 
 ### Added

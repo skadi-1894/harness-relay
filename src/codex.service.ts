@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { CONFIG, type Config } from './config.js';
 import { type ChatRequest, promptFor } from './request.js';
 import { childEnvironment } from './credentials.js';
+import { applyToolOutput, toolOutputSchema } from './tools.js';
+import { ProviderError } from './completion.js';
 import type { Completion } from './completion.js';
 
 export type { Completion } from './completion.js';
@@ -35,10 +37,15 @@ export class CodexService {
         sandboxMode: 'read-only', approvalPolicy: 'never',
         webSearchMode: 'disabled', networkAccessEnabled: false,
       });
-      const result = await thread.run(promptFor(request), { signal });
-      return { text: result.finalResponse, input: result.usage?.input_tokens ?? 0,
+      const schema=toolOutputSchema(request);
+      const result = await thread.run(promptFor(request), { signal, ...(schema?{outputSchema:schema}:{}) });
+      const completion:Completion = { text: result.finalResponse, input: result.usage?.input_tokens ?? 0,
         cached: result.usage?.cached_input_tokens ?? 0, output: result.usage?.output_tokens ?? 0,
         cacheWrite:result.usage?.cache_write_input_tokens ?? 0, reasoning:result.usage?.reasoning_output_tokens ?? 0 };
+      if(!schema) return completion;
+      let output:unknown;
+      try { output=JSON.parse(result.finalResponse); } catch { throw new ProviderError('upstream',completion); }
+      return applyToolOutput(request,completion,output);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

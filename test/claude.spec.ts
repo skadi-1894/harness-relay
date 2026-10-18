@@ -1,6 +1,7 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { access } from 'node:fs/promises';
 import type { Options, SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
+import { chatSchema } from '../src/request.js';
 import { loadConfig } from '../src/config.js';
 const sdkQuery=jest.fn<(input:{prompt:string;options:Options})=>AsyncGenerator<SDKMessage>>();
 jest.unstable_mockModule('@anthropic-ai/claude-agent-sdk',()=>({query:sdkQuery}));
@@ -29,9 +30,26 @@ describe('Claude SDK provider',()=>{
     expect(onDelta).toHaveBeenCalledWith('Hello');
     expect(onQuota).toHaveBeenCalledWith({window:'five_hour',status:'allowed_warning',utilization:.8,resetsAt:2000000000});
   });
+  it('decodes structured tool output and never streams internal JSON',async()=>{
+    events({type:'stream_event',event:{type:'content_block_delta',delta:{type:'text_delta',text:'PRIVATE INTERNAL JSON'}}},
+      {...result,structured_output:{content:'',tool_calls:[{name:'weather',arguments:'{"city":"Warsaw"}'}]}});
+    const onDelta=jest.fn();
+    const completion=await new ClaudeService(config).complete(chatSchema.parse({messages:[{role:'user',content:'Weather?'}],tools:[{type:'function',function:{name:'weather'}}]}),new AbortController().signal,{onDelta});
+    expect(onDelta).not.toHaveBeenCalled();
+    expect(completion.toolCalls?.[0].function.name).toBe('weather');
+    expect(sdkQuery.mock.calls[0][0].options).toMatchObject({outputFormat:{type:'json_schema'},includePartialMessages:false,tools:[],maxTurns:3});
+  });
   it('preserves consumed tokens on rate-limit failures without exposing provider text',async()=>{
     events({type:'rate_limit_event',rate_limit_info:{status:'rejected',rateLimitType:'five_hour'}},{...result,is_error:true,result:'SECRET'});
     await expect(new ClaudeService(config).complete({messages:[{role:'user',content:'Hi'}],stream:false},new AbortController().signal)).rejects.toMatchObject({kind:'rate_limit',usage:{input:33}});
+  });
+  it('keeps usage when SDK throws after a structured-output error result',async()=>{
+    sdkQuery.mockImplementation(async function*(){
+      yield {...result,subtype:'error_max_structured_output_retries',is_error:true} as unknown as SDKMessage;
+      throw new Error('private SDK error');
+    });
+    const request=chatSchema.parse({messages:[{role:'user',content:'Weather?'}],tools:[{type:'function',function:{name:'weather'}}]});
+    await expect(new ClaudeService(config).complete(request,new AbortController().signal)).rejects.toMatchObject({kind:'upstream',usage:{input:33,output:5}});
   });
   it('maps rejected overage credits to billing and cleans up',async()=>{
     events({type:'rate_limit_event',rate_limit_info:{status:'rejected',errorCode:'credits_required'}});

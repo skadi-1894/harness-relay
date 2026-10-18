@@ -36,7 +36,7 @@ describe('OpenAI HTTP facade', () => {
     await chat({ ...body, reasoning_effort: 'high', service_tier: 'fast' }).expect(200);
     expect(complete.mock.calls[0][0]).toMatchObject({ reasoning_effort: 'high', service_tier: 'fast' });
   });
-  it.each([{...body, tools: []}, {...body, temperature: 1}, {...body, model: 'unknown'}, {messages: []}, {messages: [{role:'tool',content:'x'}]}])('rejects unsupported requests %j', async value => {
+  it.each([{...body, temperature: 1}, {...body, model: 'unknown'}, {messages: []}, {messages: [{role:'tool',content:'x'}]}])('rejects unsupported requests %j', async value => {
     await chat(value).expect(400);
     expect(complete).not.toHaveBeenCalled();
   });
@@ -47,6 +47,21 @@ describe('OpenAI HTTP facade', () => {
     expect(JSON.parse(chunks[0]).choices[0].delta.content).toBe('Hi');
     expect(JSON.parse(chunks[1]).choices[0].finish_reason).toBe('stop');
     expect(chunks[2]).toBe('[DONE]');
+  });
+  it.each([false,true])('returns function calls and accepts client results (stream=%s)',async stream=>{
+    const tools=[{type:'function',function:{name:'weather',parameters:{type:'object',properties:{city:{type:'string'}}}}}];
+    const call={id:'call_test',type:'function' as const,function:{name:'weather',arguments:'{"city":"Warsaw"}'}};
+    complete.mockResolvedValueOnce({text:'',input:10,cached:0,output:3,toolCalls:[call]});
+    const response=await chat({...body,tools,tool_choice:'required',parallel_tool_calls:false,stream}).expect(200);
+    if(stream) {
+      const chunks=response.text.split('\n\n').filter(Boolean).map(x=>x.slice(6));
+      const parsed=chunks.slice(0,-1).map(x=>JSON.parse(x).choices[0]);
+      expect(parsed.find(x=>x.delta.tool_calls)?.delta.tool_calls).toEqual([{index:0,...call}]);
+      expect(parsed.at(-1).finish_reason).toBe('tool_calls');
+      expect(chunks.at(-1)).toBe('[DONE]');
+    } else expect(response.body.choices[0]).toEqual({index:0,message:{role:'assistant',content:null,tool_calls:[call]},finish_reason:'tool_calls'});
+    await chat({tools,messages:[...body.messages,{role:'assistant',content:null,tool_calls:[call]},{role:'tool',tool_call_id:call.id,content:'Sunny'}]}).expect(200);
+    expect(complete.mock.calls.at(-1)?.[0].messages.at(-1)).toEqual({role:'tool',tool_call_id:'call_test',content:'Sunny'});
   });
   it('sanitizes upstream errors', async () => {
     complete.mockRejectedValue(new Error('secret credential'));

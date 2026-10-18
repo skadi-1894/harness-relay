@@ -1,6 +1,7 @@
 import { jest, describe, it, expect } from '@jest/globals';
 import { access } from 'node:fs/promises';
 import type { CodexOptions, ThreadOptions, RunResult } from '@openai/codex-sdk';
+import { chatSchema } from '../src/request.js';
 import { loadConfig } from '../src/config.js';
 
 const run = jest.fn<(...args: unknown[]) => Promise<RunResult>>();
@@ -22,6 +23,13 @@ describe('Codex SDK adapter', () => {
     expect(startThread.mock.calls.at(-1)?.[0]).toMatchObject({sandboxMode:'read-only',approvalPolicy:'never',modelReasoningEffort:'high',webSearchMode:'disabled',networkAccessEnabled:false});
     expect(run.mock.calls.at(-1)?.[1]).toEqual({signal});
     await expect(access(startThread.mock.calls.at(-1)![0].workingDirectory!)).rejects.toThrow();
+  });
+  it('uses SDK outputSchema for client tools and decodes calls',async()=>{
+    run.mockResolvedValue({finalResponse:JSON.stringify({content:'',tool_calls:[{name:'weather',arguments:'{"city":"Warsaw"}'}]}),items:[],usage:null});
+    const request=chatSchema.parse({messages:[{role:'user',content:'Weather?'}],tools:[{type:'function',function:{name:'weather',parameters:{type:'object'}}}],tool_choice:'required'});
+    const completion=await new CodexService(loadConfig({INFERENCE_API_KEY:'test-secret-long-enough'})).complete(request,new AbortController().signal);
+    expect(run.mock.calls.at(-1)?.[1]).toHaveProperty('outputSchema');
+    expect(completion.toolCalls?.[0].function).toEqual({name:'weather',arguments:'{"city":"Warsaw"}'});
   });
   it('cleans up failed turns', async () => {
     run.mockRejectedValue(new Error('upstream'));

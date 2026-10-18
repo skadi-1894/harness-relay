@@ -20,7 +20,7 @@ The API listens on localhost by default. Connect your own tools using the config
 
 `MAX_CONCURRENT_REQUESTS` limits active CLI calls. `RATE_LIMIT_PER_MINUTE` is a process-local source-IP limit; it does not create provider capacity. `REQUEST_TIMEOUT_MS` cancels overdue requests. On stop, the service drains for `SHUTDOWN_GRACE_MS`, then cancels remaining work; keep Compose `stop_grace_period` longer than that duration.
 
-The container runs unprivileged with a read-only root filesystem, a writable `/tmp` and an auth volume. Tools and inherited project settings are disabled for Claude; Codex runs in an empty working directory with shell/web access disabled. These controls suit a personal relay; they are not a production SLA or multi-user isolation boundary.
+The container runs unprivileged with a read-only root filesystem, a writable `/tmp` and an auth volume. CLI tools and inherited project settings are disabled for Claude; client function definitions produce validated decisions for external execution, never local tool execution; Codex runs in an empty working directory with shell/web access disabled. These controls suit a personal relay; they are not a production SLA or multi-user isolation boundary.
 
 Use `docker compose up --build -d` after source updates. Ordinary `docker compose down` preserves the auth volume; removing volumes deletes saved logins. Do not scale the service with Compose replicas. Claude session persistence is disabled; Codex may keep normal CLI artifacts in its dedicated home, but this relay never resumes them.
 

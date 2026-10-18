@@ -1,6 +1,6 @@
 {
   "name": "harness-relay",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenAI-compatible inference relay for Codex and Claude Agent SDK",
   "license": "MIT",
   "private": true,
@@ -33,6 +33,8 @@
     "@nestjs/platform-express": "^11.1.0",
     "@openai/codex-sdk": "0.163.0",
     "@prometheus-io/client": "^0.16.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "express-rate-limit": "^8.7.1",
     "pino": "^10.4.0",
     "reflect-metadata": "^0.2.2",

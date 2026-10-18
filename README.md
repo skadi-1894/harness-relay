@@ -54,13 +54,41 @@ Set an OpenAI SDK client's `baseURL` to `http://127.0.0.1:3000/v1` and its `apiK
 | `GET /health/ready` | Public | All enabled providers' local CLIs recognize credentials; returns 503 during draining |
 | `GET /metrics` | `METRICS_TOKEN`, falling back to `INFERENCE_API_KEY` | Prometheus exposition |
 | `GET /v1/models` | `INFERENCE_API_KEY` | Operator-configured model catalog |
-| `POST /v1/chat/completions` | `INFERENCE_API_KEY` | Text conversation, JSON or SSE |
+| `POST /v1/chat/completions` | `INFERENCE_API_KEY` | Text conversation and client function calls, JSON or SSE |
 
-Request fields: `messages` (text-only system/developer/user/assistant), `model`, `stream`, `reasoning_effort`, `service_tier`. Unknown fields return 400. Models use `claude/sonnet`, `claude/opus`, `claude/haiku`, or your configured IDs; plain Claude aliases also resolve. Existing Codex model IDs remain compatible; `codex/<model>` also resolves.
+Request fields: `messages` (text-only system/developer/user/assistant/tool), `model`, `stream`, `reasoning_effort`, `service_tier`, `tools`, `tool_choice`, `parallel_tool_calls`. Unknown fields return 400. Models use `claude/sonnet`, `claude/opus`, `claude/haiku`, or your configured IDs; plain Claude aliases also resolve. Existing Codex model IDs remain compatible; `codex/<model>` also resolves.
 
 Claude supports `low`, `medium`, `high`, `xhigh`, `max` effort; Codex additionally accepts `minimal` and `ultra`. Actual support depends on the upstream model. `service_tier: fast` or `priority` requests fast mode; omitted Claude tier is standard. Configuration is in [.env.example](.env.example).
 
-Claude streams SDK text deltas as OpenAI SSE chunks. Codex currently buffers the complete SDK response before emitting SSE. Errors after streaming begins arrive as an SSE `error` object followed by `[DONE]`. Each request is independent; the supplied history is serialized into one prompt. This is not native Chat Completions role isolation. Tools, images, JSON schema output, temperature, max_tokens and the Responses API are not supported.
+Claude streams SDK text deltas as OpenAI SSE chunks. Codex currently buffers the complete SDK response before emitting SSE. Errors after streaming begins arrive as an SSE `error` object followed by `[DONE]`. Each request is independent; the supplied history is serialized into one prompt. This is not native Chat Completions role isolation. Images, public `response_format`/JSON schema output, temperature, max_tokens and the Responses API are not supported.
+
+## Client function calling (including LangChain `bind_tools`)
+
+Both providers accept OpenAI function definitions in `tools`, with `tool_choice: "auto"` (default), `"none"`, `"required"`, or `{"type":"function","function":{"name":"weather"}}`. `parallel_tool_calls: false` limits the response to one call. Empty `tools: []` is valid. Legacy `functions`/`function_call` fields and non-function tools are unsupported.
+
+```json
+{
+  "model": "claude/sonnet",
+  "messages": [{"role": "user", "content": "What is the weather in Warsaw?"}],
+  "tools": [{"type": "function", "function": {
+    "name": "weather",
+    "description": "Get the current weather for a city",
+    "parameters": {
+      "type": "object", "properties": {"city": {"type": "string"}},
+      "required": ["city"], "additionalProperties": false
+    }
+  }}],
+  "tool_choice": "required"
+}
+```
+
+A call response has `choices[0].finish_reason: "tool_calls"` and `message.tool_calls`, each with an opaque `id`, `type: "function"`, and `function: {name, arguments}`. Arguments are a JSON **string**. Execute calls in your client, append the complete assistant message, then append a `role: "tool"` message for **each** call with its `tool_call_id` and string `content`. Send that history and the same tools in the next request, usually with `tool_choice: "auto"`, to obtain the final answer or more calls. Results may arrive in any order; missing, duplicate and orphaned results return 400.
+
+LangChain can use its usual `ChatOpenAI(...).bind_tools([...])` flow with this relay's base URL and API key. Tool results from `ToolMessage` are accepted. Other unsupported options still return 400; do not configure temperature or max_tokens on this client.
+
+This is a **structured-output adaptation**, using the official [Codex SDK outputSchema](https://github.com/openai/codex/blob/main/sdk/typescript/README.md) and [Claude Agent SDK outputFormat](https://code.claude.com/docs/en/agent-sdk/structured-outputs). Tool definitions and history are serialized into the prompt; this does not provide native Chat Completions role isolation or native provider function-call semantics. The relay never executes client tools, shell commands or MCP servers. Tool-enabled turns buffer the decision, including SSE: tool call chunks carry `index`, `id`, `type`, `function.name` and `function.arguments`, followed by `finish_reason: "tool_calls"` and `[DONE]`. Internal structured-output JSON is never streamed as assistant text.
+
+Parameter schemas are validated locally with AJV (JSON Schema draft-07 and standard formats); invalid/unsupported schemas return 400 before inference. Returned arguments are checked against the corresponding schema, names and choice/parallel constraints before any calls are exposed. Invalid provider decisions return a sanitized 502 and consumed tokens remain counted. `strict` is accepted, but all returned arguments are validated regardless of that flag; unsupported schema dialects/async or unresolved remote references are rejected. Client-side validation and authorization of tool execution still apply. Structured decisions add overhead; provider model support and limits still apply.
 
 ## Usage and status for your tools and agents
 

@@ -1,4 +1,7 @@
+import type { ToolCall } from './tools.js';
+
 export interface Completion {
+  toolCalls?: ToolCall[];
   text: string;
   input: number;
   cached: number;

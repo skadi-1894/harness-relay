@@ -82,10 +82,11 @@ export class ApiController {
       if(abort.signal.aborted) throw new Error('aborted');
       if(request.stream) {
         if(!streamed) chunk({role:'assistant',content:result.text},null);
-        chunk({},'stop'); res.end('data: [DONE]\n\n'); return;
+        if(result.toolCalls?.length) chunk({tool_calls:result.toolCalls.map((call,index)=>({index,...call}))},null);
+        chunk({},result.toolCalls?.length?'tool_calls':'stop'); res.end('data: [DONE]\n\n'); return;
       }
       return res.status(200).json({id,object:'chat.completion',created,model,
-        choices:[{index:0,message:{role:'assistant',content:result.text},finish_reason:'stop'}],
+        choices:[{index:0,message:{role:'assistant',content:result.toolCalls?.length?(result.text || null):result.text,...(result.toolCalls?.length?{tool_calls:result.toolCalls}:{})},finish_reason:result.toolCalls?.length?'tool_calls':'stop'}],
         usage:{prompt_tokens:result.input,completion_tokens:result.output,total_tokens:result.input+result.output,
           prompt_tokens_details:{cached_tokens:result.cached},completion_tokens_details:{reasoning_tokens:result.reasoning ?? 0}}});
     } catch(error) {
